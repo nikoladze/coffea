@@ -56,6 +56,12 @@ class PHYSLITESchema(BaseSchema):
     The types are implemented in the `coffea.nanoevents.methods.physlite` module.
     """
 
+    skip_collections = [
+        "xTrigDecisionAux",
+        "EventInfo_p4",
+    ]
+    """We currently have issues reading these and they are not caught by the other checks"""
+
     for _k in truth_collections:
         mixins[_k] = "TruthParticle"
 
@@ -71,6 +77,11 @@ class PHYSLITESchema(BaseSchema):
             key_fields = key.split("/")[-1].split(".")
             top_key = key_fields[0]
             sub_key = ".".join(key_fields[1:])
+            if key.endswith("."):
+                continue
+            if "contents" in ak_form and not ak_form["contents"]:
+                # skip empty branches
+                continue
             objname = top_key.replace("Analysis", "").replace("AuxDyn", "")
 
             zip_groups[objname].append(((key, sub_key), ak_form))
@@ -89,14 +100,24 @@ class PHYSLITESchema(BaseSchema):
         # zip the forms
         contents = {}
         for objname, keys_and_form in zip_groups.items():
+            if objname in self.skip_collections:
+                warnings.warn(f"Skipping {objname} since it's in `skip_collections`")
+                continue
+            if len(keys_and_form) == 1:
+                # don't zip if there is only one item
+                contents[objname] = keys_and_form[0][1]
+                continue
             try:
                 contents[objname] = zip_forms(
                     {sub_key: form for (key, sub_key), form in keys_and_form},
                     objname,
                     self.mixins.get(objname, None),
-                    bypass=True,
+                    bypass=False, # TODO: does this cause any trouble?
                 )
-                content = contents[objname]["content"]
+                if "content" in contents[objname]:
+                    content = contents[objname]["content"]
+                else:
+                    content = contents[objname]
                 content["parameters"] = dict(
                     content.get("parameters", {}), collection_name=objname
                 )
