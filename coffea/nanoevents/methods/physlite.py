@@ -173,6 +173,16 @@ class Electron(Particle):
             tuple([slice(None) for i in range(trackParticles.ndim - 1)] + [0])
         ]
 
+    @property
+    def caloClusters(self):
+        links = self.caloClusterLinks
+        return _element_link(
+            self._events().egammaClusters,
+            self._eventindex,
+            links.m_persIndex,
+            links.m_persKey,
+        )
+
 
 _set_repr_name("Electron")
 
