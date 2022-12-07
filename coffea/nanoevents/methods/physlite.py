@@ -90,6 +90,21 @@ class Particle(vector.PtEtaPhiMLorentzVector, base.NanoCollection):
     def mass(self):
         return self.m
 
+    def _element_link(self, link_key, target_key):
+        if link_key in self.fields:
+            links = self[link_key]
+            el_index = links.m_persIndex
+            el_key = links.m_persKey
+        else:
+            el_index = self[link_key + ".m_persIndex"]
+            el_key = self[link_key + ".m_persKey"]
+        return _element_link(
+            self._events()[target_key],
+            self._eventindex,
+            el_index,
+            el_key,
+        )
+
 
 _set_repr_name("Particle")
 
@@ -139,12 +154,7 @@ class Muon(Particle):
 
     @property
     def trackParticle(self):
-        return _element_link(
-            self._events().CombinedMuonTrackParticles,
-            self._eventindex,
-            self["combinedTrackParticleLink.m_persIndex"],
-            self["combinedTrackParticleLink.m_persKey"],
-        )
+        return self._element_link("combinedTrackParticleLink", "CombinedMuonTrackParticles")
 
 
 _set_repr_name("Muon")
@@ -158,13 +168,7 @@ class Electron(Particle):
 
     @property
     def trackParticles(self):
-        links = self.trackParticleLinks
-        return _element_link(
-            self._events().GSFTrackParticles,
-            self._eventindex,
-            links.m_persIndex,
-            links.m_persKey,
-        )
+        return self._element_link("trackParticleLinks", "GSFTrackParticles")
 
     @property
     def trackParticle(self):
@@ -175,13 +179,7 @@ class Electron(Particle):
 
     @property
     def caloClusters(self):
-        links = self.caloClusterLinks
-        return _element_link(
-            self._events().egammaClusters,
-            self._eventindex,
-            links.m_persIndex,
-            links.m_persKey,
-        )
+        return self._element_link("caloClusterLinks", "egammaClusters")
 
 
 _set_repr_name("Electron")
