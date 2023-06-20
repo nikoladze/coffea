@@ -34,6 +34,11 @@ from coffea.nanoevents.util import key_to_tuple, tuple_to_key
 
 
 def _remove_not_interpretable(branch):
+    try:
+        branch.interpretation
+    except:
+        warnings.warn(f"Uproot problem with interpretation for branch {branch.name}")
+        return False
     if isinstance(
         branch.interpretation, uproot.interpretation.identify.uproot.AsGrouped
     ):
