@@ -94,6 +94,7 @@ class PHYSLITESchema(BaseSchema):
                 not has_eventindex[objname]
                 and "List" in ak_form["class"]
                 and "List" not in ak_form["content"]["class"]
+                and "Link" not in key
             ):
                 zip_groups[objname].append(
                     ((key, "_eventindex"), self._create_eventindex_form(ak_form, key))
@@ -123,6 +124,23 @@ class PHYSLITESchema(BaseSchema):
                         sub_key,
                     )
                 to_zip[sub_key] = form
+
+            # if objname == "Electrons":
+            #     import pdb; pdb.set_trace()
+
+            # reorder to prefer non-double jagged fields for offsets
+            new_to_zip = {}
+            for k, v in list(to_zip.items()):
+                if "List" in v.get("content", {}).get("class", ""):
+                    continue
+                if "Link" in k:
+                    # also try to avoid ElementLinks (even if single-jagged)
+                    continue
+                new_to_zip[k] = to_zip.pop(k)
+            for k, v in list(to_zip.items()):
+                new_to_zip[k] = to_zip.pop(k)
+            to_zip = new_to_zip
+
             try:
                 contents[objname] = zip_forms(
                     to_zip,
